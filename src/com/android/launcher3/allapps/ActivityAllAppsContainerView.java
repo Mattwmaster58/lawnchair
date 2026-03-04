@@ -601,7 +601,10 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
             return;
         }
         if (currentActivePage != SEARCH) {
-            mActivityContext.hideKeyboard();
+            View searchEditText = mSearchUiManager.getEditText();
+            if (searchEditText == null || !searchEditText.isFocused()) {
+                mActivityContext.hideKeyboard();
+            }
         }
         if (mAH.get(currentActivePage).mRecyclerView != null) {
             mAH.get(currentActivePage).mRecyclerView.bindFastScrollbar(mFastScroller,
