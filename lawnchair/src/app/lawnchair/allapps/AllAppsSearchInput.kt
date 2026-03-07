@@ -90,6 +90,7 @@ class AllAppsSearchInput(context: Context, attrs: AttributeSet?) :
 
     private var focusedResultTitle = ""
     private var canShowHint = false
+    private var explicitClearRequested = false
 
     private val bg = DrawableTokens.SearchInputFg.resolve(context)
     private val bgAlphaAnimator = ValueAnimator.ofFloat(0f, 1f).apply {
@@ -138,9 +139,8 @@ class AllAppsSearchInput(context: Context, attrs: AttributeSet?) :
         with(actionButton) {
             isVisible = false
             setOnClickListener {
+                explicitClearRequested = true
                 input.reset()
-                searchAlgorithm?.doZeroStateSearch(this@AllAppsSearchInput)
-                updateHint()
             }
         }
 
@@ -223,7 +223,9 @@ class AllAppsSearchInput(context: Context, attrs: AttributeSet?) :
             afterTextChanged = {
                 updateHint()
                 if (input.text.isNullOrEmpty()) {
-                    searchAlgorithm?.doZeroStateSearch(this)
+                    if (!explicitClearRequested) {
+                        searchAlgorithm?.doZeroStateSearch(this)
+                    }
                 }
                 if (input.text.toString() == "/lawnchairdebug") {
                     val enableDebugMenu = prefs.enableDebugMenu
@@ -390,8 +392,13 @@ class AllAppsSearchInput(context: Context, attrs: AttributeSet?) :
         searchQueryBuilder.clear()
         searchQueryBuilder.clearSpans()
         Selection.setSelection(searchQueryBuilder, 0)
-        appsView.onClearSearchResult()
+
+        if (explicitClearRequested) {
+            appsView.onClearSearchResult()
+            input.hideKeyboard()
+        }
         appsView.floatingHeaderView?.setFloatingRowsCollapsed(false)
+        post { explicitClearRequested = false }
     }
 
     private fun notifyResultChanged() {
